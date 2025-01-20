@@ -133,7 +133,7 @@ def classify_by_date(parent:str, files:list[str], dates:list[datetime]) -> None:
 		
 
 def main() -> None:
-	parser = ArgumentParser(description = "Classifi2es photos in a given folder by date based on their EXIF information.", epilog = f"This is still experimental. Snapshot {SNAPSHOT_VERSION}")
+	parser = ArgumentParser(description = "Classifies photos in a given folder by date based on their EXIF information.", epilog = f"This is still experimental. Snapshot {SNAPSHOT_VERSION}")
 	parser.add_argument('folder', nargs = "*", default = '.', help = "The folder paths where you want the files inside to be classified by date.")
 	parser.add_argument('-f', '--format', '--folder-date-format', action = "store", required = False, default = None, help = "The date format that the classification folders should be in. Use strftime format codes like \"https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes\"")
 	parser.add_argument('-v', '--verbose', action = "store_true", required = False, help = "Prints more detailed information. By default it remains silent unless something went wrong.")
