@@ -8,7 +8,7 @@ from shutil import move
 from subprocess import check_output
 from typing import List, Optional, Tuple
 
-SNAPSHOT_VERSION = "202306270021"
+SNAPSHOT_VERSION = "202306270039"
 SCRIPT_DIR = path.dirname(path.realpath(__file__))
 EXIFTOOL_COMMAND:str = "exiftool"
 # EXIFTOOL_COMMAND = path.join(SCRIPT_DIR, "exiftool")
@@ -97,9 +97,10 @@ def main() -> None:
 	parser = ArgumentParser(description = "Classifies photos in a given folder by date based on their EXIF information.", epilog = f"This is still experimental. Snapshot {SNAPSHOT_VERSION}")
 	parser.add_argument('folder', nargs = "*", default = '.', help = "The folder paths where you want the files inside to be classified by date.")
 	parser.add_argument('-f', '--format', '--folder-date-format', action = "store", required = False, default = None, help = "The date format that the classification folders should be in. Use strftime format codes like \"https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes\"")
+	parser.add_argument('-v', '--verbose', action = "store_true", required = False, help = "Prints more detailed information. By default it remains silent unless something went wrong.")
 	args = parser.parse_args()
 
-	logging.basicConfig(level = logging.DEBUG, format = '[%(levelname)s] %(message)s')
+	logging.basicConfig(level = logging.INFO if args.verbose else logging.WARNING, format = '[%(levelname)s] %(message)s')
 
 	folders:list = args.folder
 
