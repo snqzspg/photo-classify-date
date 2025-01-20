@@ -8,7 +8,7 @@ from shutil import move
 from subprocess import check_output
 from typing import List, Optional, Tuple
 
-SNAPSHOT_VERSION = "202306262348"
+SNAPSHOT_VERSION = "202306270021"
 SCRIPT_DIR = path.dirname(path.realpath(__file__))
 EXIFTOOL_COMMAND:str = "exiftool"
 # EXIFTOOL_COMMAND = path.join(SCRIPT_DIR, "exiftool")
@@ -52,30 +52,44 @@ def clean_printing_line() -> None:
 def parse_exiftool_datetime(exiftooldate:str) -> Tuple[int, int, int, int, int, int]:
 	return tuple(map(lambda a: int(a), reduce(lambda a, b: a + b, map(lambda a: a.split(':'), exiftooldate.split(" ")))))
 
+def print_no_newline_info(s:str) -> None:
+	if logging.root.isEnabledFor(logging.INFO):
+		print(fit_one_line(s), end = '\r')
+
 def get_exif_date_time(img:str, progress:int, goal:int) -> datetime:
 	exif_date_str = get_exiftool_date_info_iphone(img)
-	if logging.root.isEnabledFor(logging.INFO):
-		print(fit_one_line(f"[{progress}/{goal}] Processing \"{img}\""))
 	if not exif_date_str or exif_date_str == '-':
 		last_mod_date = datetime.fromtimestamp(path.getmtime(img))
 		clean_printing_line()
 		logging.info(f"Exiftool did not give a date for \"{img}\", using last modified date instead.")
 		logging.info("Last modified date: " + last_mod_date.strftime("%Y:%m:%d %H:%M:%S"))
+		print_no_newline_info(fit_one_line(f"[{progress}/{goal}] Processing \"{img}\""))
 		return last_mod_date
+	clean_printing_line()
+	logging.debug(f"Exiftool output for \"{img}\": {exif_date_str}")
+	print_no_newline_info(fit_one_line(f"[{progress}/{goal}] Processing \"{img}\""))
 	y, m, d, h, mins, secs = parse_exiftool_datetime(exif_date_str)
 	return datetime(y, m, d, h, mins, secs)
 
 def classify_by_date(parent:str, files:List[str], dates:List[datetime]) -> None:
 	assert len(files) == len(dates)
-	for file, date in zip(files, dates):
+	goal = len(files)
+	for i, (file, date) in enumerate(zip(files, dates)):
 		ori_file = path.join(parent, file)
 		date_folder = path.join(parent, date_folder_name_fmt(date))
-		if not path.isdir(date_folder):
-			mkdir(date_folder)
 		new_file = path.join(date_folder, file)
+		progress_line = fit_one_line(f"[{i}/{goal}] Moving \"{ori_file}\" -> \"{new_file}\"")
+		if not path.isdir(date_folder):
+			clean_printing_line()
+			logging.debug(f"Making folder \"{date_folder}\"")
+			print_no_newline_info(progress_line)
+			mkdir(date_folder)
 		if path.exists(new_file):
+			clean_printing_line()
 			logging.warning(f"The path '{new_file}' is already taken, the file '{ori_file}' will not be moved.")
+			print_no_newline_info(progress_line)
 			continue
+		print_no_newline_info(progress_line)
 		move(ori_file, new_file)
 		
 
@@ -85,7 +99,7 @@ def main() -> None:
 	parser.add_argument('-f', '--format', '--folder-date-format', action = "store", required = False, default = None, help = "The date format that the classification folders should be in. Use strftime format codes like \"https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes\"")
 	args = parser.parse_args()
 
-	logging.basicConfig(level = logging.WARNING, format = '[%(levelname)s] %(message)s')
+	logging.basicConfig(level = logging.DEBUG, format = '[%(levelname)s] %(message)s')
 
 	folders:list = args.folder
 
@@ -101,7 +115,9 @@ def main() -> None:
 		files = [i for i in listdir(folder) if path.isfile(path.join(folder, i))]
 		goal = len(files)
 		dates = [get_exif_date_time(path.join(folder, f), i, goal) for i, f in enumerate(files)]
+		clean_printing_line()
 		classify_by_date(folder, files, dates)
+		clean_printing_line()
 
 if __name__ == '__main__':
 	main()
