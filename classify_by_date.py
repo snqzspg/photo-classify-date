@@ -8,6 +8,7 @@ import logging
 from os import get_terminal_size, linesep, listdir, mkdir, path
 from shutil import move
 from subprocess import check_output
+from sys import stderr
 from typing import Optional
 
 SNAPSHOT_VERSION = "202306270039"
@@ -58,7 +59,8 @@ def fit_one_line(s:str, keep_last_n_chars:int = 0, n_dots_ellipsis:int = 3) -> s
 	return s[:w - keep_last_n_chars - n_dots_ellipsis] + ('.' * n_dots_ellipsis) + ("" if keep_last_n_chars == 0 else s[-keep_last_n_chars:])
 
 def clean_printing_line() -> None:
-	print(' ' * (get_terminal_size().columns - 1), end = "\r")
+	# print(' ' * (get_terminal_size().columns - 1), end = "\r")
+	print('\x1b[2K', end = '\r')
 
 def parse_exiftool_datetime(exiftooldate:str) -> tuple[int, int, int, int, int, int]:
 	return tuple(map(lambda a: int(a), reduce(lambda a, b: a + b, map(lambda a: a.split(':'), exiftooldate.split(" ")))))
@@ -131,13 +133,23 @@ def classify_by_date(parent:str, files:list[str], dates:list[datetime]) -> None:
 		
 
 def main() -> None:
-	parser = ArgumentParser(description = "Classifies photos in a given folder by date based on their EXIF information.", epilog = f"This is still experimental. Snapshot {SNAPSHOT_VERSION}")
+	parser = ArgumentParser(description = "Classifi2es photos in a given folder by date based on their EXIF information.", epilog = f"This is still experimental. Snapshot {SNAPSHOT_VERSION}")
 	parser.add_argument('folder', nargs = "*", default = '.', help = "The folder paths where you want the files inside to be classified by date.")
 	parser.add_argument('-f', '--format', '--folder-date-format', action = "store", required = False, default = None, help = "The date format that the classification folders should be in. Use strftime format codes like \"https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes\"")
 	parser.add_argument('-v', '--verbose', action = "store_true", required = False, help = "Prints more detailed information. By default it remains silent unless something went wrong.")
+	parser.add_argument('-c', '--color', choices = ["auto", "always", "never"], default = "auto", required = False, help = "When to output ANSI colour formatting.")
 	args = parser.parse_args()
 
+	should_print_color = stderr.isatty() if args.color == "auto" else (args.color == "always")
+
 	logging.basicConfig(level = logging.INFO if args.verbose else logging.WARNING, format = '[%(levelname)s] %(message)s')
+	# logging.basicConfig(level = logging.DEBUG, format = '[%(levelname)s] %(message)s')
+	if should_print_color:
+		logging.addLevelName(logging.DEBUG, "\x1b[1;32mDEBUG\x1b[0m")
+		logging.addLevelName(logging.INFO, "\x1b[1;34mINFO\x1b[0m")
+		logging.addLevelName(logging.WARNING, "\x1b[1;33mWARNING\x1b[0m")
+		logging.addLevelName(logging.ERROR, "\x1b[1;31mERROR\x1b[0m")
+		logging.addLevelName(logging.CRITICAL, "\x1b[1;31mCRITICAL\x1b[0m")
 
 	folders:list = args.folder
 
