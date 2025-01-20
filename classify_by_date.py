@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import asyncio
+
 from argparse import ArgumentParser
 from datetime import datetime
 from functools import reduce
@@ -17,16 +19,25 @@ def date_folder_name_fmt(dt:datetime) -> str:
 	# return f'{dt.year}-{dt.month}-{dt.day}'
 	return dt.strftime("%Y-%m-%d")
 
-def get_exiftool_date_info_iphone(img:str) -> Optional[str]:
+async def get_exiftool_date_info_iphone(img:str) -> Optional[str]:
 	command = [EXIFTOOL_COMMAND, '-T', img]
-	info = check_output(command + ['-CreationDate']).decode(encoding = "utf-8")
+	# info = check_output(command + ['-CreationDate']).decode(encoding = "utf-8")
+	command.append('-CreationDate')
+	proc = await asyncio.create_subprocess_exec(EXIFTOOL_COMMAND, *command[1:], stdout = asyncio.subprocess.PIPE)
+	info = (await proc.communicate())[0].decode(encoding = "utf-8")
 	info = info.split(linesep)[0]
 	info = info.split('+')[0]
 	if info == '-':
-		info = check_output(command + ['-DateTimeCreated']).decode(encoding = "utf-8")
+		command[-1] = '-DateTimeCreated'
+		# info = check_output(command + ['-DateTimeCreated']).decode(encoding = "utf-8")
+		proc = await asyncio.create_subprocess_exec(EXIFTOOL_COMMAND, *command[1:], stdout = asyncio.subprocess.PIPE)
+		info = (await proc.communicate())[0].decode(encoding = "utf-8")
 		info = info.split(linesep)[0]
 	if info == '-':
-		info = check_output(command + ['-DateTimeOriginal']).decode(encoding = "utf-8")
+		command[-1] = '-DateTimeOriginal'
+		# info = check_output(command + ['-DateTimeOriginal']).decode(encoding = "utf-8")
+		proc = await asyncio.create_subprocess_exec(EXIFTOOL_COMMAND, *command[1:], stdout = asyncio.subprocess.PIPE)
+		info = (await proc.communicate())[0].decode(encoding = "utf-8")
 		info = info.split(linesep)[0]
 		info = info.split('+')[0]
 	if info == '-':
@@ -56,8 +67,33 @@ def print_no_newline_info(s:str) -> None:
 	if logging.root.isEnabledFor(logging.INFO):
 		print(fit_one_line(s), end = '\r')
 
+async def get_exiftool_date_info(img:str, progress:list[int], goal:int) -> datetime:
+	exif_date_str = await get_exiftool_date_info_iphone(img)
+	progress[0] += 1
+
+	if not exif_date_str or exif_date_str == '-':
+		last_mod_date = datetime.fromtimestamp(path.getmtime(img))
+		clean_printing_line()
+		logging.info(f"Exiftool did not give a date for \"{img}\", using last modified date instead.")
+		logging.info("Last modified date: " + last_mod_date.strftime("%Y:%m:%d %H:%M:%S"))
+		print_no_newline_info(fit_one_line(f"[{progress[0]}/{goal}] Processing \"{img}\""))
+		return last_mod_date
+
+	clean_printing_line()
+	logging.debug(f"Exiftool output for \"{img}\": {exif_date_str}")
+	print_no_newline_info(fit_one_line(f"[{progress[0]}/{goal}] Processing \"{img}\""))
+	y, m, d, h, mins, secs = parse_exiftool_datetime(exif_date_str)
+	return datetime(y, m, d, h, mins, secs)
+
+async def get_exif_datetimes_in_parallel(imgs:list[str]) -> list[datetime]:
+	progress_out = [0]
+	exif_tasks = [get_exiftool_date_info(img, progress_out, len(imgs)) for i, img in enumerate(imgs)]
+
+	return await asyncio.gather(*exif_tasks)
+
 def get_exif_date_time(img:str, progress:int, goal:int) -> datetime:
 	exif_date_str = get_exiftool_date_info_iphone(img)
+
 	if not exif_date_str or exif_date_str == '-':
 		last_mod_date = datetime.fromtimestamp(path.getmtime(img))
 		clean_printing_line()
@@ -65,6 +101,7 @@ def get_exif_date_time(img:str, progress:int, goal:int) -> datetime:
 		logging.info("Last modified date: " + last_mod_date.strftime("%Y:%m:%d %H:%M:%S"))
 		print_no_newline_info(fit_one_line(f"[{progress}/{goal}] Processing \"{img}\""))
 		return last_mod_date
+
 	clean_printing_line()
 	logging.debug(f"Exiftool output for \"{img}\": {exif_date_str}")
 	print_no_newline_info(fit_one_line(f"[{progress}/{goal}] Processing \"{img}\""))
@@ -115,7 +152,8 @@ def main() -> None:
 			continue
 		files = [i for i in listdir(folder) if path.isfile(path.join(folder, i))]
 		goal = len(files)
-		dates = [get_exif_date_time(path.join(folder, f), i + 1, goal) for i, f in enumerate(files)]
+		# dates = [get_exif_date_time(path.join(folder, f), i + 1, goal) for i, f in enumerate(files)]
+		dates = asyncio.run(get_exif_datetimes_in_parallel([path.join(folder, f) for f in files]))
 		clean_printing_line()
 		classify_by_date(folder, files, dates)
 		clean_printing_line()
