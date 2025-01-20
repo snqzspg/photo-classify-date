@@ -132,6 +132,23 @@ def classify_by_date(parent:str, files:list[str], dates:list[datetime]) -> None:
 		print_no_newline_info(progress_line)
 		move(ori_file, new_file)
 		
+# Don't use this, need to test for custom command in path variable first.
+def print_exif_tool_info(print_color:bool = True) -> None:
+	global EXIFTOOL_COMMAND
+	col_red   = '\x1b[1;31m'
+	col_green = '\x1b[1;32m'
+	col_blue  = '\x1b[1;34m'
+	reset     = '\x1b[0m'
+	print(f'\'{col_red}{EXIFTOOL_COMMAND}{reset}\' is not found in your PATH variable.\n', file = stderr)
+	print('Exiftool is required for this tool to extract date and time information from the image files.', file = stderr)
+	print(f'You can download exiftool from \'{col_blue}https://exiftool.org/{reset}\'.', file = stderr)
+	print(f'{col_blue}NOTE{reset}: For Linux users, exiftool is usually inside perl\'s image library. For Ubuntu it\'s \'{col_green}libimage-exiftool-perl{reset}\'.\n', file = stderr)
+	print('If you still see this error despite having exiftool, you may provide the path to the executable below.', file = stderr)
+	print('(Leave blank to abort)', file = stderr)
+	EXIFTOOL_COMMAND = input(" >>> ")
+	while EXIFTOOL_COMMAND and not path.isfile(EXIFTOOL_COMMAND):
+		print(f'File is still not executable.')
+		EXIFTOOL_COMMAND = input(" >>> ")
 
 def main() -> None:
 	parser = ArgumentParser(description = "Classifies photos in a given folder by date based on their EXIF information.", epilog = f"This is still experimental. Snapshot {SNAPSHOT_VERSION}")
