@@ -6,7 +6,7 @@ import logging
 from os import get_terminal_size, linesep, listdir, mkdir, path
 from shutil import move
 from subprocess import check_output
-from typing import List, Optional, Tuple
+from typing import Iterable, Optional
 
 SNAPSHOT_VERSION = "202306270039"
 SCRIPT_DIR = path.dirname(path.realpath(__file__))
@@ -49,7 +49,7 @@ def fit_one_line(s:str, keep_last_n_chars:int = 0, n_dots_ellipsis:int = 3) -> s
 def clean_printing_line() -> None:
 	print(' ' * (get_terminal_size().columns - 1), end = "\r")
 
-def parse_exiftool_datetime(exiftooldate:str) -> Tuple[int, int, int, int, int, int]:
+def parse_exiftool_datetime(exiftooldate:str) -> tuple[int, int, int, int, int, int]:
 	return tuple(map(lambda a: int(a), reduce(lambda a, b: a + b, map(lambda a: a.split(':'), exiftooldate.split(" ")))))
 
 def print_no_newline_info(s:str) -> None:
@@ -71,7 +71,7 @@ def get_exif_date_time(img:str, progress:int, goal:int) -> datetime:
 	y, m, d, h, mins, secs = parse_exiftool_datetime(exif_date_str)
 	return datetime(y, m, d, h, mins, secs)
 
-def classify_by_date(parent:str, files:List[str], dates:List[datetime]) -> None:
+def classify_by_date(parent:str, files:list[str], dates:list[datetime]) -> None:
 	assert len(files) == len(dates)
 	goal = len(files)
 	for i, (file, date) in enumerate(zip(files, dates)):
