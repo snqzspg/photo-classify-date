@@ -8,7 +8,7 @@ import logging
 from os import get_terminal_size, linesep, listdir, mkdir, path
 from shutil import move
 from subprocess import check_output
-from typing import Iterable, Optional
+from typing import Optional
 
 SNAPSHOT_VERSION = "202306270039"
 SCRIPT_DIR = path.dirname(path.realpath(__file__))
