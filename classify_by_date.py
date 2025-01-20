@@ -78,7 +78,7 @@ def classify_by_date(parent:str, files:List[str], dates:List[datetime]) -> None:
 		ori_file = path.join(parent, file)
 		date_folder = path.join(parent, date_folder_name_fmt(date))
 		new_file = path.join(date_folder, file)
-		progress_line = fit_one_line(f"[{i}/{goal}] Moving \"{ori_file}\" -> \"{new_file}\"")
+		progress_line = fit_one_line(f"[{i + 1}/{goal}] Moving \"{ori_file}\" -> \"{new_file}\"")
 		if not path.isdir(date_folder):
 			clean_printing_line()
 			logging.debug(f"Making folder \"{date_folder}\"")
@@ -114,7 +114,7 @@ def main() -> None:
 			continue
 		files = [i for i in listdir(folder) if path.isfile(path.join(folder, i))]
 		goal = len(files)
-		dates = [get_exif_date_time(path.join(folder, f), i, goal) for i, f in enumerate(files)]
+		dates = [get_exif_date_time(path.join(folder, f), i + 1, goal) for i, f in enumerate(files)]
 		clean_printing_line()
 		classify_by_date(folder, files, dates)
 		clean_printing_line()
