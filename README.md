@@ -6,7 +6,7 @@ This is not tested on photos taken on Android. If the EXIF format used by Androi
 This script requires Exiftool to be available. It can downloaded from their official page (https://exiftool.org/). Follow the installation instructions on the page to get a working executable first. [Detailed instructions here](https://exiftool.org/install.html)
 ### Linux
 For Linux users, exiftool is available as a Perl image library and can be installed using your package manager. For example, for Ubuntu:
-https://exiftool.org/```
+```
 sudo apt install libimage-exiftool-perl
 ```
 Although there seems to be a standalone version on `apt`.
