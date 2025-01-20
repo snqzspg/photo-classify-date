@@ -12,6 +12,7 @@ from sys import stderr
 from typing import Optional
 
 SNAPSHOT_VERSION = "202306270039"
+RELEASE_VERSION = "v1"
 SCRIPT_DIR = path.dirname(path.realpath(__file__))
 EXIFTOOL_COMMAND:str = "exiftool"
 # EXIFTOOL_COMMAND = path.join(SCRIPT_DIR, "exiftool")
