@@ -11,7 +11,7 @@ from subprocess import check_output
 from sys import stderr
 from typing import Optional
 
-SNAPSHOT_VERSION = "202306270039"
+SNAPSHOT_VERSION = "202501210313"
 RELEASE_VERSION = "v1"
 SCRIPT_DIR = path.dirname(path.realpath(__file__))
 EXIFTOOL_COMMAND:str = "exiftool"
