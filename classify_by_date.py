@@ -67,8 +67,9 @@ def parse_exiftool_datetime(exiftooldate:str) -> tuple[int, int, int, int, int, 
 	return tuple(map(lambda a: int(a), reduce(lambda a, b: a + b, map(lambda a: a.split(':'), exiftooldate.split(" ")))))
 
 def print_no_newline_info(s:str) -> None:
-	if logging.root.isEnabledFor(logging.INFO):
-		print(fit_one_line(s), end = '\r')
+	# if logging.root.isEnabledFor(logging.INFO):
+	if stderr.isatty():
+		print(fit_one_line(s), file = stderr, end = '\r')
 
 async def get_exiftool_date_info(img:str, progress:list[int], goal:int) -> datetime:
 	exif_date_str = await get_exiftool_date_info_iphone(img)
