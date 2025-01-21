@@ -11,6 +11,8 @@ from subprocess import check_output
 from sys import stderr
 from typing import Optional
 
+LOGGER_NOTE = 25
+
 SNAPSHOT_VERSION = "202501210313"
 RELEASE_VERSION = "v1"
 SCRIPT_DIR = path.dirname(path.realpath(__file__))
@@ -78,8 +80,8 @@ async def get_exiftool_date_info(img:str, progress:list[int], goal:int) -> datet
 	if not exif_date_str or exif_date_str == '-':
 		last_mod_date = datetime.fromtimestamp(path.getmtime(img))
 		clean_printing_line()
-		logging.info(f"Exiftool did not give a date for \"{img}\", using last modified date instead.")
-		logging.info("Last modified date: " + last_mod_date.strftime("%Y:%m:%d %H:%M:%S"))
+		logging.log(LOGGER_NOTE, f"Exiftool did not give a date for \"{img}\", using last modified date instead.")
+		logging.log(LOGGER_NOTE, "Last modified date: " + last_mod_date.strftime("%Y:%m:%d %H:%M:%S"))
 		print_no_newline_info(fit_one_line(f"[{progress[0]}/{goal}] Processing \"{img}\""))
 		return last_mod_date
 
@@ -161,14 +163,17 @@ def main() -> None:
 
 	should_print_color = stderr.isatty() if args.color == "auto" else (args.color == "always")
 
-	logging.basicConfig(level = logging.INFO if args.verbose else logging.WARNING, format = '[%(levelname)s] %(message)s')
+	logging.basicConfig(level = logging.INFO if args.verbose else LOGGER_NOTE, format = '[%(levelname)s] %(message)s')
 	# logging.basicConfig(level = logging.DEBUG, format = '[%(levelname)s] %(message)s')
 	if should_print_color:
 		logging.addLevelName(logging.DEBUG, "\x1b[1;32mDEBUG\x1b[0m")
 		logging.addLevelName(logging.INFO, "\x1b[1;34mINFO\x1b[0m")
+		logging.addLevelName(LOGGER_NOTE, "\x1b[1;36mNOTE\x1b[0m")
 		logging.addLevelName(logging.WARNING, "\x1b[1;33mWARNING\x1b[0m")
 		logging.addLevelName(logging.ERROR, "\x1b[1;31mERROR\x1b[0m")
 		logging.addLevelName(logging.CRITICAL, "\x1b[1;31mCRITICAL\x1b[0m")
+	else:
+		logging.addLevelName(LOGGER_NOTE, "NOTE")
 
 	folders:list = args.folder
 
@@ -182,6 +187,10 @@ def main() -> None:
 			logging.warning(f"Path '{folder}' given is not a directory.")
 			continue
 		files = [i for i in listdir(folder) if path.isfile(path.join(folder, i))]
+
+		if not files:
+			logging.log(LOGGER_NOTE, "There are no files to process.")
+
 		goal = len(files)
 		# dates = [get_exif_date_time(path.join(folder, f), i + 1, goal) for i, f in enumerate(files)]
 		dates = asyncio.run(get_exif_datetimes_in_parallel([path.join(folder, f) for f in files]))
