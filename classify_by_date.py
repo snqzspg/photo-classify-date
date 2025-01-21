@@ -93,9 +93,18 @@ async def get_exiftool_date_info(img:str, progress:list[int], goal:int) -> datet
 
 async def get_exif_datetimes_in_parallel(imgs:list[str]) -> list[datetime]:
 	progress_out = [0]
-	exif_tasks = [get_exiftool_date_info(img, progress_out, len(imgs)) for i, img in enumerate(imgs)]
+	exif_tasks = [get_exiftool_date_info(img, progress_out, len(imgs)) for img in imgs]
 
-	return await asyncio.gather(*exif_tasks)
+	rets = []
+
+	batch_size = 128
+
+	for batch_tasks in (exif_tasks[i:i+batch_size] for i in range(0, len(exif_tasks), batch_size)):
+		clean_printing_line()
+		logging.debug(f"Batch of {len(batch_tasks)}")
+		rets.extend(await asyncio.gather(*batch_tasks))
+
+	return rets
 
 def get_exif_date_time(img:str, progress:int, goal:int) -> datetime:
 	exif_date_str = get_exiftool_date_info_iphone(img)
