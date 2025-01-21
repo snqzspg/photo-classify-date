@@ -86,7 +86,7 @@ async def get_exiftool_date_info(img:str, progress:list[int], goal:int) -> datet
 		return last_mod_date
 
 	clean_printing_line()
-	logging.debug(f"Exiftool output for \"{img}\": {exif_date_str}")
+	logging.info(f"Exiftool output for \"{img}\": {exif_date_str}")
 	print_no_newline_info(fit_one_line(f"[{progress[0]}/{goal}] Processing \"{img}\""))
 	y, m, d, h, mins, secs = parse_exiftool_datetime(exif_date_str)
 	return datetime(y, m, d, h, mins, secs)
@@ -118,7 +118,7 @@ def get_exif_date_time(img:str, progress:int, goal:int) -> datetime:
 		return last_mod_date
 
 	clean_printing_line()
-	logging.debug(f"Exiftool output for \"{img}\": {exif_date_str}")
+	logging.info(f"Exiftool output for \"{img}\": {exif_date_str}")
 	print_no_newline_info(fit_one_line(f"[{progress}/{goal}] Processing \"{img}\""))
 	y, m, d, h, mins, secs = parse_exiftool_datetime(exif_date_str)
 	return datetime(y, m, d, h, mins, secs)
@@ -133,7 +133,7 @@ def classify_by_date(parent:str, files:list[str], dates:list[datetime]) -> None:
 		progress_line = fit_one_line(f"[{i + 1}/{goal}] Moving \"{ori_file}\" -> \"{new_file}\"")
 		if not path.isdir(date_folder):
 			clean_printing_line()
-			logging.debug(f"Making folder \"{date_folder}\"")
+			logging.info(f"Making folder \"{date_folder}\"")
 			print_no_newline_info(progress_line)
 			mkdir(date_folder)
 		if path.exists(new_file):
